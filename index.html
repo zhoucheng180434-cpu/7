@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<!-- 声明文档类型：这是html5网页 -->
+<html lang="zh-CN">
+<!-- html根标签，语言设置为中文 -->
+<head>
+    <!-- 头部区域，存放网页配置，页面看不见 -->
+    <meta charset="UTF-8">
+    <!-- 设置网页文字编码，防止中文乱码 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- 适配手机，自动缩放页面 -->
+    <title>啊杰照片播放器</title>
+    <!-- 浏览器标签页标题 -->
+    <style>
+        <!-- CSS样式开始，用来美化页面 -->
+        * {
+            /* *代表所有元素 */
+            margin: 0;
+            /* 外边距清零 */
+            padding: 0;
+            /* 内边距清零 */
+            box-sizing: border-box;
+            /* 盒模型：边框大小算进元素宽度 */
+        }
+
+        body {
+            /* body：网页主体 */
+            font-family: "Microsoft YaHei", sans-serif;
+            /* 字体：微软雅黑 */
+            background: #1a1a2e;
+            /* 页面背景颜色 */
+            min-height: 100vh;
+            /* 最小高度占满整个屏幕 */
+            display: flex;
+            /* 弹性布局，方便居中 */
+            flex-direction: column;
+            /* 元素垂直排列 */
+            align-items: center;
+            /* 水平居中 */
+            justify-content: center;
+            /* 垂直居中 */
+            padding: 20px;
+            /* 内边距20像素 */
+        }
+
+        h1 {
+            /* 一级大标题 */
+            color: #fff;
+            /* 文字白色 */
+            margin-bottom: 20px;
+            /* 下方外边距20px */
+            font-weight: 400;
+            /* 字体粗细，正常字重 */
+        }
+
+        /* 主播放器容器 */
+        .player-container {
+            /* class类选择器，播放器盒子 */
+            width: 100%;
+            /* 宽度100% */
+            max-width: 900px;
+            /* 最大宽度限制900px */
+            background: #16213e;
+            /* 盒子背景色 */
+            border-radius: 12px;
+            /* 圆角12像素 */
+            overflow: hidden;
+            /* 超出盒子的内容隐藏 */
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+            /* 阴影效果 */
+        }
+
+        /* 大图显示区 */
+        .main-view {
+            /* 大图容器 */
+            position: relative;
+            /* 相对定位，给内部按钮定位用 */
+            width: 1000px;
+            height: 2000px;
+            /* 高度500px */
+            background: #000;
+            /* 背景黑色 */
+            overflow: hidden;
+            /* 溢出内容隐藏 */
+        }
+
+        .slide {
+            /* 每一张图片容器 */
+            position: absolute;
+            /* 绝对定位，全部叠在一起 */
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            /* 透明度0，默认看不见 */
+            transition: opacity 0.6s ease;
+            /* 透明度过渡动画，0.6秒淡入淡出 */
+        }
+
+        .slide.active {
+            /* 加上active类就显示图片 */
+            opacity: 1;
+            /* 透明度1，完全显示 */
+        }
+
+        .slide img {
+            /* slide里面的图片 */
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            /* 图片不变形，填满盒子，多余部分裁切 */
+        }
+
+        /* 左右切换按钮 */
+        .nav-btn {
+            /* 切换按钮样式 */
+            position: absolute;
+            top: 50%;
+            /* 垂直50%位置 */
+            transform: translateY(-50%);
+            /* 向上偏移一半高度，实现垂直居中 */
+            width: 50px;
+            height: 50px;
+            background: rgba(0,0,0,0.4);
+            /* 半透明黑色背景 */
+            border: none;
+            /* 去掉边框 */
+            color: #fff;
+            /* 文字白色 */
+            font-size: 24px;
+            cursor: pointer;
+            /* 鼠标放上去变成小手 */
+            border-radius: 50%;
+            /* 圆形按钮 */
+            transition: background 0.3s;
+            /* 背景色过渡动画0.3秒 */
+            z-index: 10;
+            /* 层级，保证按钮在图片上层 */
+        }
+
+        .nav-btn:hover {
+            /* 鼠标悬浮按钮上 */
+            background: rgba(0,0,0,0.7);
+            /* 背景加深 */
+        }
+
+        .prev { left: 20px; }
+        /* 上一张按钮，靠左20px */
+        .next { right: 20px; }
+        /* 下一张按钮，靠右20px */
+
+        /* 播放控制栏 */
+        .controls {
+            /* 控制栏盒子 */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            /* 元素之间间隔20px */
+            padding: 15px;
+            background: #0f3460;
+        }
+
+        .ctrl-btn {
+            /* 控制按钮样式 */
+            padding: 8px 20px;
+            border: none;
+            background: #e94560;
+            color: #fff;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.3s;
+        }
+
+        .ctrl-btn:hover {
+            /* 鼠标悬浮控制按钮 */
+            background: #ff6b81;
+        }
+
+        .counter {
+            /* 计数文字（1/5） */
+            color: #fff;
+            font-size: 14px;
+        }
+
+        /* 缩略图栏 */
+        .thumbnails {
+            /* 底部缩略图容器 */
+            display: flex;
+            gap: 8px;
+            padding: 15px;
+            overflow-x: auto;
+            /* 横向滚动条，图片多可以左右拉 */
+            background: #16213e;
+        }
+
+        .thumb {
+            /* 单个缩略图盒子 */
+            flex-shrink: 0;
+            /* 禁止缩略图被压缩变小 */
+            width: 80px;
+            height: 60px;
+            border-radius: 4px;
+            overflow: hidden;
+            cursor: pointer;
+            opacity: 0.6;
+            transition: opacity 0.3s, transform 0.3s;
+            border: 2px solid transparent;
+            /* 透明边框预留位置 */
+        }
+
+        .thumb:hover {
+            /* 鼠标放到缩略图 */
+            opacity: 1;
+            transform: scale(1.05);
+            /* 放大一点点 */
+        }
+
+        .thumb.active {
+            /* 当前选中缩略图 */
+            opacity: 1;
+            border-color: #e94560;
+            /* 边框变红 */
+        }
+
+        .thumb img {
+            /* 缩略图里面图片 */
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* 滚动条美化 */
+        .thumbnails::-webkit-scrollbar {
+            height: 6px;
+            /* 横向滚动条高度 */
+        }
+        .thumbnails::-webkit-scrollbar-thumb {
+            background: #e94560;
+            border-radius: 3px;
+        }
+    </style>
+    <!-- CSS结束 -->
+</head>
+<body>
+<!-- 网页显示内容区域 -->
+<h1>📷 照片播放器</h1>
+<!-- 大标题 -->
+
+<div class="player-container">
+    <!-- 播放器整体容器 -->
+    <!-- 大图显示 -->
+    <div class="main-view" id="mainView">
+        <!-- 大图区域，id用来JS获取这个元素 -->
+        <div class="slide active">
+            <!-- 第一张图片，默认active，直接显示 -->
+            <img src="img/2.jpg" alt="照片1">
+            <!-- 图片地址，alt是图片加载失败时显示文字 -->
+        </div>
+        <div class="slide">
+            <!-- 第二张图片容器 -->
+            <img src="img/2.jpg" alt="照片2">
+        </div>
+        <div class="slide">
+            <!-- 第三张 -->
+            <img src="img/3.jpg" alt="照片3">
+        </div>
+        <div class="slide">
+            <!-- 第四张 -->
+            <img src="img/4.jpg" alt="照片4">
+        </div>
+        <div class="slide">
+            <!-- 第五张 -->
+            <img src="img/1.jpg" alt="照片5">
+        </div>
+
+        <button class="nav-btn prev" onclick="prevSlide()">‹</button>
+        <!-- 上一张按钮，点击执行prevSlide()函数 -->
+        <button class="nav-btn next" onclick="nextSlide()">›</button>
+        <!-- 下一张按钮，点击执行nextSlide()函数 -->
+    </div>
+
+    <!-- 控制栏 -->
+    <div class="controls">
+        <button class="ctrl-btn" id="playBtn" onclick="togglePlay()">▶ 播放</button>
+        <!-- 播放暂停按钮，点击执行togglePlay() -->
+        <span class="counter" id="counter">1 / 5</span>
+        <!-- 计数文字，id给JS修改数字 -->
+    </div>
+
+    <!-- 缩略图 -->
+    <div class="thumbnails" id="thumbnails">
+        <!-- JS动态生成缩略图，这里html不写图片 -->
+    </div>
+</div>
+
+<script>
+    // ========= JS 开始，逐行翻译 =========
+    const slides = document.querySelectorAll('.slide');
+    // 找到页面所有class=slide的图片盒子，存入slides变量
+    const thumbnails = document.getElementById('thumbnails');
+    // 获取缩略图容器
+    const counter = document.getElementById('counter');
+    // 获取计数文字元素
+    const playBtn = document.getElementById('playBtn');
+    // 获取播放按钮
+
+    let currentIndex = 0;
+    // currentIndex：记录当前是第几张图，从0开始计数
+    let timer = null;
+    // 定时器变量，用来自动轮播
+    let isPlaying = false;
+    // 标记：是否正在自动播放，默认false不播放
+    const total = slides.length;
+    // total：图片总数量
+
+    // 生成缩略图，遍历每一张slide图片
+    slides.forEach((slide, index) => {
+        // 循环，slide=当前图片盒子，index=序号
+        const imgSrc = slide.querySelector('img').src;
+        // 获取这张图片的图片地址
+        const thumb = document.createElement('div');
+        // 创建一个div盒子，作为缩略图
+        thumb.className = 'thumb' + (index === 0 ? ' active' : '');
+        // 如果是第0张，加上active选中样式，其他不加
+        thumb.innerHTML = `<img src="${imgSrc}" alt="缩略图${index+1}">`;
+        // 在缩略图盒子放入图片
+        thumb.onclick = () => goToSlide(index);
+        // 点击缩略图，执行跳转图片函数，跳转到对应序号
+        thumbnails.appendChild(thumb);
+        // 把做好的缩略图放进缩略图容器
+    });
+
+    const thumbs = document.querySelectorAll('.thumb');
+    // 获取全部缩略图
+
+    // 函数：跳转到指定序号图片
+    function goToSlide(index) {
+        slides[currentIndex].classList.remove('active');
+        // 把当前图片的active移除，隐藏
+        thumbs[currentIndex].classList.remove('active');
+        // 当前缩略图取消选中
+
+        currentIndex = index;
+        // 更新当前图片序号为传入的index
+
+        slides[currentIndex].classList.add('active');
+        // 给新图片加上active，显示图片
+        thumbs[currentIndex].classList.add('active');
+        // 缩略图标记选中
+        counter.textContent = `${currentIndex + 1} / ${total}`;
+        // 更新计数文字，+1因为程序从0开始，人看从1开始
+    }
+
+    // 函数：下一张图片
+    function nextSlide() {
+        let next = (currentIndex + 1) % total;
+        // 序号+1；%取余数，到最后一张回到0第一张
+        goToSlide(next);
+        // 调用跳转图片函数
+    }
+
+    // 函数：上一张图片
+    function prevSlide() {
+        let prev = (currentIndex - 1 + total) % total;
+        // 序号-1，加total防止负数，再取余
+        goToSlide(prev);
+    }
+
+    // 函数：播放 / 暂停切换
+    function togglePlay() {
+        if (isPlaying) {
+            // 判断：如果现在正在播放
+            clearInterval(timer);
+            // 关闭定时器，停止自动切换
+            playBtn.textContent = '▶ 播放';
+            // 按钮文字改成播放
+            isPlaying = false;
+            // 修改标记为停止播放
+        } else {
+            timer = setInterval(nextSlide, 3000);
+            // 开启定时器：3000毫秒=3秒执行一次nextSlide，切下一张
+            playBtn.textContent = '⏸ 暂停';
+            // 按钮文字改为暂停
+            isPlaying = true;
+            // 标记为正在播放
+        }
+    }
+
+    // 监听键盘按键
+    document.addEventListener('keydown', (e) => {
+        // 页面监听键盘按下事件，e保存按键信息
+        if (e.key === 'ArrowLeft') prevSlide();
+        // 如果按左方向键，执行上一张
+        if (e.key === 'ArrowRight') nextSlide();
+        // 如果按右方向键，执行下一张
+        if (e.key === ' ') {
+            // 如果按下空格键
+            e.preventDefault();
+            // 取消浏览器默认空格滚动页面行为
+            togglePlay();
+            // 执行播放暂停
+        }
+    });
+</script>
+<!-- JS代码结束 -->
+</body>
+</html>
